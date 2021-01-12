@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Home - Programmer101N</title>
+		<link rel="stylesheet" href="assets/css/styles.css" />
+	</head>
+
+	<body>
+		<canvas id="canvas"> </canvas>
+	</body>
+	<script src="assets/js/anime.js"></script>
+	<script>
+		const canvas = document.getElementById("canvas");
+		const c = canvas.getContext("2d");
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+		canvas.style.backgroundColor = "#01C5FF";
+		c.strokeStyle = "#FFFFFF";
+
+		window.addEventListener("resize", () => {
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;
+		});
+
+		function createDrop(x, y) {
+			const drop = {
+				x: x,
+				y: y - 150,
+				endPos: {
+					x,
+					y,
+					dropForm: 30,
+				},
+				dropForm: 3,
+				opacity: 0,
+				draw: () => {
+					c.beginPath();
+					c.fillStyle = `rgba(255, 255, 255, ${drop.opacity})`;
+					c.moveTo(drop.x - drop.dropForm, drop.y);
+					c.lineTo(drop.x, drop.y - drop.endPos.dropForm * 1.4);
+					c.lineTo(drop.x + drop.dropForm, drop.y);
+					c.arc(drop.x, drop.y, drop.dropForm, 0, Math.PI);
+					c.closePath();
+					c.fill();
+				},
+			};
+			return drop;
+		}
+
+		function clickEffect(x, y) {
+			let strokeWidth = 5;
+			const animatables = [];
+
+			for (let j = 0; j < 3; j++) {
+				const circle = {
+					x: x,
+					y: y,
+					radius: 0,
+					strokeWidth: strokeWidth,
+					draw: () => {
+						c.beginPath();
+						c.arc(
+							circle.x,
+							circle.y,
+							circle.radius,
+							0,
+							Math.PI * 2,
+							true
+						);
+						c.lineWidth = circle.strokeWidth;
+						c.stroke();
+					},
+				};
+				strokeWidth -= 2;
+				animatables.push(circle);
+			}
+
+			animate(x, y, animatables);
+		}
+
+		function animate(x, y, animatables) {
+			const tl = new anime.timeline({
+				duration: 7000,
+				easing: "easeOutExpo",
+			});
+
+			tl.add({
+				targets: createDrop(x, y),
+				y: (p) => {
+					return p.endPos.y;
+				},
+				dropForm: (p) => {
+					return p.endPos.dropForm;
+				},
+				opacity: [0, 1, 0],
+				duration: 1500,
+				update: (e) => {
+					e.animatables.forEach((a) => {
+						a.target.draw();
+					});
+				},
+				easing: "easeInExpo",
+			});
+
+			tl.add({
+				targets: animatables,
+				radius: window.innerWidth * 1.125,
+				update: (e) => {
+					e.animatables.forEach((a) => {
+						a.target.draw();
+					});
+				},
+				delay: anime.stagger(150),
+			});
+		}
+
+		const render = anime({
+			duration: Infinity,
+			update: () => {
+				c.clearRect(0, 0, canvas.width, canvas.height);
+			},
+		});
+
+		document.addEventListener(
+			"ontouchstart" in window || navigator.msMaxTouchPoints
+				? "touchstart"
+				: "mousedown",
+			(e) => {
+				clickEffect(e.clientX, e.clientY);
+				render.play();
+			}
+		);
+	</script>
+</html>
